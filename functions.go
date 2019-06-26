@@ -29,14 +29,29 @@ func GetStreamersHandlerCaching(clientId, templatePath string, redis *redis.Clie
 			var streams Streamers
 			json.Unmarshal([]byte(cache), &streams)
 
-			if strings.HasSuffix(r.RequestURI, ".json") {
-				out, _ := json.Marshal(streams)
-				w.Header().Add("Content-Type", "application/json")
-				w.Write(out)
-			} else {
-				if err := templ.Execute(w, streams); err != nil {
-					w.WriteHeader(http.StatusInternalServerError)
+			if streams.Total != 0 {
+				if strings.HasSuffix(r.RequestURI, ".json") {
+					out, _ := json.Marshal(streams)
+					w.Header().Add("Content-Type", "application/json")
+					w.Write(out)
+				} else {
+					if err := templ.Execute(w, streams); err != nil {
+						w.WriteHeader(http.StatusInternalServerError)
+					}
 				}
+			} else if streams, err := loadStreamers(clientId); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+			} else {
+				out, _ := json.Marshal(streams)
+				if strings.HasSuffix(r.RequestURI, ".json") {
+					w.Header().Add("Content-Type", "application/json")
+					w.Write(out)
+				} else {
+					if err := templ.Execute(w, streams); err != nil {
+						w.WriteHeader(http.StatusInternalServerError)
+					}
+				}
+				redis.Set(fmt.Sprintf("%s:streams", clientId), out, time.Minute*1).Result()
 			}
 		} else {
 			if streams, err := loadStreamers(clientId); err != nil {
