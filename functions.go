@@ -19,7 +19,7 @@ func GetStreamersHandlerCaching(clientId, templatePath string, redis *redis.Clie
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		templ, err := template.ParseFiles(templatePath)
-		if err != nil {
+		if err != nil && !strings.HasSuffix(r.RequestURI, ".json") {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
