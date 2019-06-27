@@ -66,7 +66,9 @@ func GetStreamersHandlerCaching(clientId, templatePath string, redis *redis.Clie
 						w.WriteHeader(http.StatusInternalServerError)
 					}
 				}
-				redis.Set(fmt.Sprintf("%s:streams", clientId), out, time.Minute*1).Result()
+				if streams.Total > 0 {
+					redis.Set(fmt.Sprintf("%s:streams", clientId), out, time.Minute*5).Result()
+				}
 			}
 		}
 	}
