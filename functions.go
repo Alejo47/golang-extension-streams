@@ -113,7 +113,7 @@ func loadStreamers(extClientId string) (Streamers, error) {
 
 	client := &http.Client{}
 
-	for done != true {
+	for !done {
 		uri := fmt.Sprintf("https://api.twitch.tv/extensions/%s/live_activated_channels?cursor=%s", extClientId, cursor)
 
 		req, _ := http.NewRequest("GET", uri, nil)
@@ -123,7 +123,6 @@ func loadStreamers(extClientId string) (Streamers, error) {
 		var streams ExtStreamsOut
 
 		json.Unmarshal(body, &streams)
-		cursor = streams.Cursor
 
 		if len(streams.Channels) > 0 {
 			streamsWG.Add(1)
@@ -154,6 +153,7 @@ func loadStreamers(extClientId string) (Streamers, error) {
 			}(streams)
 		}
 
+		cursor = streams.Cursor
 		if cursor == "" {
 			done = true
 		}
