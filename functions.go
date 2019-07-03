@@ -132,7 +132,9 @@ func loadStreamers(extClientId string) (Streamers, error) {
 
 				var usernames []string
 				for _, c := range s.Channels {
-					usernames = append(usernames, c.Username)
+					if c.Username != "" {
+						usernames = append(usernames, strings.TrimSpace(c.Username))
+					}
 				}
 
 				streamsUri := fmt.Sprintf("https://api.twitch.tv/helix/streams?user_login=%s", strings.Join(usernames, "&user_login="))
