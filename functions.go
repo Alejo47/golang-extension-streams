@@ -1,6 +1,7 @@
 package streamers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -17,6 +18,7 @@ import (
 func GetStreamersHandlerCaching(clientId, templatePath string, redis *redis.Client) func(w http.ResponseWriter, r *http.Request) {
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.Background()
 
 		templ, err := template.ParseFiles(templatePath)
 		if err != nil && !strings.HasSuffix(r.RequestURI, ".json") {
@@ -24,7 +26,7 @@ func GetStreamersHandlerCaching(clientId, templatePath string, redis *redis.Clie
 			return
 		}
 
-		if cache, err := redis.Get(fmt.Sprintf("%s:streams", clientId)).Result(); cache != "" && err == nil {
+		if cache, err := redis.Get(ctx, fmt.Sprintf("%s:streams", clientId)).Result(); cache != "" && err == nil {
 
 			var streams Streamers
 			json.Unmarshal([]byte(cache), &streams)
@@ -51,7 +53,7 @@ func GetStreamersHandlerCaching(clientId, templatePath string, redis *redis.Clie
 						w.WriteHeader(http.StatusInternalServerError)
 					}
 				}
-				redis.Set(fmt.Sprintf("%s:streams", clientId), out, time.Minute*1).Result()
+				redis.Set(ctx, fmt.Sprintf("%s:streams", clientId), out, time.Minute*1).Result()
 			}
 		} else {
 			if streams, err := loadStreamers(clientId); err != nil {
@@ -67,7 +69,7 @@ func GetStreamersHandlerCaching(clientId, templatePath string, redis *redis.Clie
 					}
 				}
 				if streams.Total > 0 {
-					redis.Set(fmt.Sprintf("%s:streams", clientId), out, time.Minute*5).Result()
+					redis.Set(ctx, fmt.Sprintf("%s:streams", clientId), out, time.Minute*5).Result()
 				}
 			}
 		}
